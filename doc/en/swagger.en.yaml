@@ -1,0 +1,181 @@
+openapi: 3.0.3
+info:
+  title: CaroWebApp Auth API
+  version: 1.0.0
+  description: |
+    Authentication, email confirmation, and user profile management API.
+  contact:
+    name: Zaurbek Makhmudov
+    email: zaurbek.makhmudov@hanseholding.com
+servers:
+  - url: https://api.carowebapp.io/api/v1
+    description: Production server
+
+tags:
+  - name: Auth
+    description: Authentication and registration
+  - name: Profile
+    description: User profile management
+
+
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: User login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successful authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  email:
+                    type: string
+        '400':
+          description: Validation error
+
+  /auth/confirm:
+    get:
+      tags: [Auth]
+      summary: Confirm email address
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Email confirmed
+        '400':
+          description: Invalid or expired token
+
+  /auth/resend-confirmation:
+    post:
+      tags: [Auth]
+      summary: Resend confirmation email
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Email sent
+        '400':
+          description: Already confirmed
+        '429':
+          description: Too many requests
+
+  /auth/create-profile:
+    post:
+      tags: [Profile]
+      summary: Create user profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProfileRequest'
+      responses:
+        '201':
+          description: Profile created
+        '401':
+          description: Unauthorized
+        '500':
+          description: Server error
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    RegisterRequest:
+      type: object
+      required: [email, password, role]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        role:
+          type: string
+
+    CreateProfileRequest:
+      type: object
+      required: [salutation, firstName, lastName, street, houseNumber, postalCode, city]
+      properties:
+        salutation:
+          type: string
+        title:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        street:
+          type: string
+        houseNumber:
+          type: string
+        postalCode:
+          type: string
+        city:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        email_confirmed:
+          type: boolean
+        role:
+          type: string
+        profile_status:
+          type: string
